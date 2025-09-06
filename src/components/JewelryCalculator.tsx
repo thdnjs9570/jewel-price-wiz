@@ -71,20 +71,30 @@ const JewelryCalculator = () => {
 
   // 계산 로직
   const calculatePrice = (): CalculationResult | null => {
+    console.log('=== 계산 시작 ===');
+    console.log('입력값:', inputs);
+    console.log('금시세:', goldPrice);
+    console.log('마진 설정:', marginSettings);
+
     const weight = parseFloat(inputs.weight);
     const laborCost = parseFloat(inputs.laborCost) || 0;
     const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
 
+    console.log('파싱된 값들:', { weight, laborCost, currentGoldPrice });
+
     // 입력값 유효성 검사
     if (!inputs.weight || isNaN(weight) || weight <= 0) {
+      console.log('중량 검사 실패:', inputs.weight, weight);
       return null;
     }
     
     if (!currentGoldPrice || currentGoldPrice <= 0) {
+      console.log('금시세 검사 실패:', currentGoldPrice);
       return null;
     }
 
     if (isNaN(laborCost) || laborCost < 0) {
+      console.log('공임 검사 실패:', laborCost);
       return null;
     }
 
@@ -100,8 +110,16 @@ const JewelryCalculator = () => {
       const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
       const baseCost = goldValue + laborCost;
 
+      console.log('계산 과정:', {
+        goldValue,
+        baseCost,
+        purityRatio: purityRatios[inputs.purity],
+        marginRate: marginSettings[inputs.purity]
+      });
+
       // NaN 체크
       if (isNaN(baseCost) || !isFinite(baseCost)) {
+        console.log('기본 원가 NaN:', baseCost);
         return null;
       }
 
@@ -132,10 +150,14 @@ const JewelryCalculator = () => {
         discountProfitRate
       };
 
+      console.log('최종 결과:', result);
+
       // 모든 값이 유효한 숫자인지 확인
       const isValidResult = Object.values(result).every(value => 
         typeof value === 'number' && isFinite(value) && !isNaN(value)
       );
+
+      console.log('결과 유효성:', isValidResult);
 
       return isValidResult ? result : null;
     } catch (error) {
