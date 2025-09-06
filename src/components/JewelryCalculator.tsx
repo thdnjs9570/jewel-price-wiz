@@ -223,7 +223,7 @@ const JewelryCalculator = () => {
                 <Calculator className="h-6 w-6 text-primary-foreground" />
               </div>
               <CardTitle className="text-3xl font-bold bg-gradient-gold bg-clip-text text-transparent">
-                주얼리 가격 산정
+                판매 가격 계산기
               </CardTitle>
             </div>
             <CardDescription className="text-lg">
