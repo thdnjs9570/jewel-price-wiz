@@ -19,6 +19,7 @@ interface MarginSettings {
   k14: number;
   k18: number;
   k24: number;
+  baseCost: number;
 }
 
 interface CalculationInputs {
@@ -54,7 +55,8 @@ const JewelryCalculator = () => {
     return saved ? JSON.parse(saved) : {
       k14: 20,
       k18: 23,
-      k24: 10
+      k24: 10,
+      baseCost: 9000
     };
   });
 
@@ -292,6 +294,20 @@ const JewelryCalculator = () => {
                   <p className="text-sm text-muted-foreground">최대 할인가는 각 마진율에서 3% 차감하여 자동 계산됩니다.</p>
                   <div className="space-y-3">
                     <div>
+                      <Label htmlFor="baseCost">기본 마진 (원)</Label>
+                      <Input
+                        id="baseCost"
+                        type="number"
+                        value={tempMarginSettings.baseCost}
+                        onChange={(e) => setTempMarginSettings({
+                          ...tempMarginSettings,
+                          baseCost: parseFloat(e.target.value) || 0
+                        })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
                       <Label htmlFor="margin14k">14K 최대 마진율</Label>
                       <Input
                         id="margin14k"
@@ -514,9 +530,9 @@ const JewelryCalculator = () => {
                     marginSettings
                   });
                   
-                  // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
+                  // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임 + 기본 마진
                   const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
-                  const baseCost = goldValue + laborCost;
+                  const baseCost = goldValue + laborCost + marginSettings.baseCost;
                   
                   // 일반 판매가 = 기본 원가 + (기본 원가 × 마진율/100)
                   const marginAmount = baseCost * (currentMarginPercent / 100);
@@ -607,10 +623,10 @@ const JewelryCalculator = () => {
                           기본 원가: {formatNumber(baseCost)}원
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">
-                          (금값: {formatNumber(goldValue)}원 + 공임: {formatNumber(laborCost)}원)
+                          (금값: {formatNumber(goldValue)}원 + 공임: {formatNumber(laborCost)}원 + 기본마진: {formatNumber(marginSettings.baseCost)}원)
                         </div>
                         <div className="text-xs text-muted-foreground mt-2">
-                          계산식: {formatNumber(currentGoldPrice)}원 × ({weight}g ÷ 3.75g) × {purityRatios[inputs.purity]} + {formatNumber(laborCost)}원
+                          계산식: {formatNumber(currentGoldPrice)}원 × ({weight}g ÷ 3.75g) × {purityRatios[inputs.purity]} + {formatNumber(laborCost)}원 + {formatNumber(marginSettings.baseCost)}원
                         </div>
                       </div>
                     </>
