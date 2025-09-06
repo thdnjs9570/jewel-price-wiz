@@ -1,7 +1,7 @@
-import JewelryCalculator from '@/components/JewelryCalculator';
+import CalculatorTabs from '@/components/CalculatorTabs';
 
 const Index = () => {
-  return <JewelryCalculator />;
+  return <CalculatorTabs />;
 };
 
 export default Index;
