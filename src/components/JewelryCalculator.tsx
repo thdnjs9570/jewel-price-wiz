@@ -138,8 +138,11 @@ const JewelryCalculator = () => {
         return null;
       }
 
-      // 마진율 적용
-      const marginRate = marginSettings[inputs.purity] / 100;
+      // 마진율 적용 - purity 키 매핑 수정
+      const marginKey = inputs.purity === '14k' ? 'k14' : 
+                       inputs.purity === '18k' ? 'k18' : 
+                       inputs.purity === '24k' ? 'k24' : 'k14';
+      const marginRate = marginSettings[marginKey] / 100;
       let regularPrice = baseCost * (1 + marginRate);
 
       // 할인가 계산 (마진율에서 3% 차감)
