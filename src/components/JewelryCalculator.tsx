@@ -475,40 +475,61 @@ const JewelryCalculator = () => {
         {/* 실시간 계산 결과 또는 안내 메시지 */}
         <Card className="card-gradient border-border">
           <CardContent className="text-center py-8">
-            {inputs.weight && parseFloat(inputs.weight) > 0 && goldPrice.vatPrice > 0 ? (
+            {inputs.weight && parseFloat(inputs.weight) > 0 && (goldPrice.vatPrice > 0 || goldPrice.cashPrice > 0) ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-center gap-2 mb-6">
                   <TrendingUp className="h-6 w-6 text-gold" />
                   <h3 className="text-2xl font-bold text-gold">실시간 가격 계산</h3>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* 일반 판매가 */}
-                  <div className="p-6 bg-gradient-card rounded-lg border border-border">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <DollarSign className="h-5 w-5 text-gold" />
-                      <h4 className="text-lg font-semibold text-gold-light">일반 판매가</h4>
-                    </div>
-                    {(() => {
-                      const weight = parseFloat(inputs.weight) || 0;
-                      const laborCost = parseFloat(inputs.laborCost) || 0;
-                      const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
-                      const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
-                      
-                      const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
-                      const baseCost = goldValue + laborCost;
-                      const marginRate = marginSettings[inputs.purity] / 100;
-                      const regularPrice = baseCost * (1 + marginRate);
-                      const regularProfit = regularPrice - baseCost;
-                      const regularProfitRate = regularPrice > 0 ? Math.round((regularProfit / regularPrice) * 100) : 0;
-                      
-                      return (
-                        <>
+                {(() => {
+                  // 기본 계산값들
+                  const weight = parseFloat(inputs.weight) || 0;
+                  const laborCost = parseFloat(inputs.laborCost) || 0;
+                  const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
+                  const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
+                  
+                  // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
+                  const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
+                  const baseCost = goldValue + laborCost;
+                  
+                  // 마진율 (퍼센트를 소수로 변환)
+                  const marginPercent = marginSettings[inputs.purity]; // 20, 23, 10 등
+                  const marginRate = marginPercent / 100; // 0.20, 0.23, 0.10 등
+                  
+                  // 일반 판매가 = 기본 원가 × (1 + 마진율)
+                  const regularPrice = baseCost * (1 + marginRate);
+                  
+                  // 최대 할인가 = 기본 원가 × (1 + (마진율 - 3%))
+                  const discountMarginRate = Math.max(0, (marginPercent - 3) / 100); // 3% 할인
+                  const discountPrice = baseCost * (1 + discountMarginRate);
+                  
+                  // 순이익 계산
+                  const regularProfit = regularPrice - baseCost;
+                  const discountProfit = discountPrice - baseCost;
+                  
+                  // 수익률 계산
+                  const regularProfitRate = regularPrice > 0 ? Math.round((regularProfit / regularPrice) * 100) : 0;
+                  const discountProfitRate = discountPrice > 0 ? Math.round((discountProfit / discountPrice) * 100) : 0;
+                  
+                  return (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {/* 일반 판매가 */}
+                        <div className="p-6 bg-gradient-card rounded-lg border border-border">
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <DollarSign className="h-5 w-5 text-gold" />
+                            <h4 className="text-lg font-semibold text-gold-light">일반 판매가</h4>
+                          </div>
                           <div className="text-3xl font-bold text-foreground mb-3">
                             {formatNumber(regularPrice)}원
                           </div>
                           <Separator className="mb-3" />
                           <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">적용 마진율</span>
+                              <span className="font-semibold text-gold">{marginPercent}%</span>
+                            </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">순이익</span>
                               <span className="font-semibold text-success">+{formatNumber(regularProfit)}원</span>
@@ -518,38 +539,23 @@ const JewelryCalculator = () => {
                               <span className="font-semibold text-success">{regularProfitRate}%</span>
                             </div>
                           </div>
-                        </>
-                      );
-                    })()}
-                  </div>
+                        </div>
 
-                  {/* 최대 할인가 */}
-                  <div className="p-6 bg-gradient-card rounded-lg border border-border">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <DollarSign className="h-5 w-5 text-warning" />
-                      <h4 className="text-lg font-semibold text-warning">최대 할인가</h4>
-                    </div>
-                    {(() => {
-                      const weight = parseFloat(inputs.weight) || 0;
-                      const laborCost = parseFloat(inputs.laborCost) || 0;
-                      const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
-                      const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
-                      
-                      const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
-                      const baseCost = goldValue + laborCost;
-                      const marginRate = marginSettings[inputs.purity] / 100;
-                      const discountMarginRate = Math.max(0, marginRate - 0.03);
-                      const discountPrice = baseCost * (1 + discountMarginRate);
-                      const discountProfit = discountPrice - baseCost;
-                      const discountProfitRate = discountPrice > 0 ? Math.round((discountProfit / discountPrice) * 100) : 0;
-                      
-                      return (
-                        <>
+                        {/* 최대 할인가 */}
+                        <div className="p-6 bg-gradient-card rounded-lg border border-border">
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <DollarSign className="h-5 w-5 text-warning" />
+                            <h4 className="text-lg font-semibold text-warning">최대 할인가</h4>
+                          </div>
                           <div className="text-3xl font-bold text-foreground mb-3">
                             {formatNumber(discountPrice)}원
                           </div>
                           <Separator className="mb-3" />
                           <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">적용 마진율</span>
+                              <span className="font-semibold text-warning">{Math.max(0, marginPercent - 3)}%</span>
+                            </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">순이익</span>
                               <span className="font-semibold text-warning">+{formatNumber(discountProfit)}원</span>
@@ -559,36 +565,25 @@ const JewelryCalculator = () => {
                               <span className="font-semibold text-warning">{discountProfitRate}%</span>
                             </div>
                           </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
+                        </div>
+                      </div>
 
-                {/* 원가 정보 */}
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-2">원가 정보</div>
-                  {(() => {
-                    const weight = parseFloat(inputs.weight) || 0;
-                    const laborCost = parseFloat(inputs.laborCost) || 0;
-                    const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
-                    const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
-                    
-                    const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
-                    const baseCost = goldValue + laborCost;
-                    
-                    return (
-                      <>
+                      {/* 원가 정보 */}
+                      <div className="p-4 bg-muted rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-2">원가 정보</div>
                         <div className="text-lg font-semibold">
                           기본 원가: {formatNumber(baseCost)}원
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">
                           (금값: {formatNumber(goldValue)}원 + 공임: {formatNumber(laborCost)}원)
                         </div>
-                      </>
-                    );
-                  })()}
-                </div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                          계산식: {formatNumber(currentGoldPrice)}원 × ({weight}g ÷ 3.75g) × {purityRatios[inputs.purity]} + {formatNumber(laborCost)}원
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <div className="space-y-4">
