@@ -140,11 +140,17 @@ const JewelryCalculator = () => {
 
       // 마진율 적용
       const marginRate = marginSettings[inputs.purity] / 100;
-      const regularPrice = baseCost * (1 + marginRate);
+      let regularPrice = baseCost * (1 + marginRate);
 
       // 할인가 계산 (마진율에서 3% 차감)
       const discountMarginRate = Math.max(0, marginRate - 0.03); // 3% 할인
-      const discountPrice = baseCost * (1 + discountMarginRate);
+      let discountPrice = baseCost * (1 + discountMarginRate);
+
+      // 부가세 포함 케이스일 때 5% VAT 추가
+      if (inputs.priceType === 'vat') {
+        regularPrice = regularPrice * 1.05;
+        discountPrice = discountPrice * 1.05;
+      }
 
       // 순이익 계산
       const regularProfit = regularPrice - baseCost;
