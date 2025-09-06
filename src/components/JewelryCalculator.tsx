@@ -489,9 +489,23 @@ const JewelryCalculator = () => {
                   const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
                   const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
                   
+                  console.log('실시간 계산 값들:', {
+                    weight,
+                    laborCost,
+                    currentGoldPrice,
+                    purity: inputs.purity,
+                    marginSettings
+                  });
+                  
                   // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
                   const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
                   const baseCost = goldValue + laborCost;
+                  
+                  console.log('중간 계산값들:', {
+                    goldValue,
+                    baseCost,
+                    purityRatio: purityRatios[inputs.purity]
+                  });
                   
                   // 마진율 (퍼센트를 소수로 변환)
                   const marginPercent = marginSettings[inputs.purity]; // 20, 23, 10 등
@@ -503,6 +517,13 @@ const JewelryCalculator = () => {
                   // 최대 할인가 = 기본 원가 × (1 + (마진율 - 3%))
                   const discountMarginRate = Math.max(0, (marginPercent - 3) / 100); // 3% 할인
                   const discountPrice = baseCost * (1 + discountMarginRate);
+                  
+                  console.log('최종 계산값들:', {
+                    marginPercent,
+                    marginRate,
+                    regularPrice,
+                    discountPrice
+                  });
                   
                   // 순이익 계산
                   const regularProfit = regularPrice - baseCost;
