@@ -77,7 +77,16 @@ const JewelryCalculator = () => {
     const laborCost = parseFloat(inputs.laborCost) || 0;
     const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
 
-    if (!weight || weight <= 0 || !currentGoldPrice) {
+    // 입력값 유효성 검사
+    if (!inputs.weight || isNaN(weight) || weight <= 0) {
+      return null;
+    }
+    
+    if (!currentGoldPrice || currentGoldPrice <= 0) {
+      return null;
+    }
+
+    if (isNaN(laborCost) || laborCost < 0) {
       return null;
     }
 
@@ -88,33 +97,52 @@ const JewelryCalculator = () => {
       '24k': 1
     };
 
-    // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
-    const baseCost = (currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity]) + laborCost;
+    try {
+      // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
+      const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
+      const baseCost = goldValue + laborCost;
 
-    // 마진율 적용
-    const marginRate = marginSettings[inputs.purity] / 100;
-    const regularPrice = baseCost * (1 + marginRate);
+      // NaN 체크
+      if (isNaN(baseCost) || !isFinite(baseCost)) {
+        return null;
+      }
 
-    // 할인가 계산
-    const discountPrice = regularPrice * (1 - marginSettings.discountRate / 100);
+      // 마진율 적용
+      const marginRate = marginSettings[inputs.purity] / 100;
+      const regularPrice = baseCost * (1 + marginRate);
 
-    // 순이익 계산
-    const regularProfit = regularPrice - baseCost;
-    const discountProfit = discountPrice - baseCost;
+      // 할인가 계산
+      const discountPrice = regularPrice * (1 - marginSettings.discountRate / 100);
 
-    // 순이익률 계산
-    const regularProfitRate = Math.round((regularProfit / regularPrice) * 100);
-    const discountProfitRate = Math.round((discountProfit / discountPrice) * 100);
+      // 순이익 계산
+      const regularProfit = regularPrice - baseCost;
+      const discountProfit = discountPrice - baseCost;
 
-    return {
-      baseCost,
-      regularPrice,
-      discountPrice,
-      regularProfit,
-      discountProfit,
-      regularProfitRate,
-      discountProfitRate
-    };
+      // 순이익률 계산 (0으로 나누기 방지)
+      const regularProfitRate = regularPrice > 0 ? Math.round((regularProfit / regularPrice) * 100) : 0;
+      const discountProfitRate = discountPrice > 0 ? Math.round((discountProfit / discountPrice) * 100) : 0;
+
+      // 최종 결과 검증
+      const result = {
+        baseCost,
+        regularPrice,
+        discountPrice,
+        regularProfit,
+        discountProfit,
+        regularProfitRate,
+        discountProfitRate
+      };
+
+      // 모든 값이 유효한 숫자인지 확인
+      const isValidResult = Object.values(result).every(value => 
+        typeof value === 'number' && isFinite(value) && !isNaN(value)
+      );
+
+      return isValidResult ? result : null;
+    } catch (error) {
+      console.error('계산 중 오류 발생:', error);
+      return null;
+    }
   };
 
   const result = calculatePrice();
@@ -142,6 +170,9 @@ const JewelryCalculator = () => {
   };
 
   const formatNumber = (num: number) => {
+    if (typeof num !== 'number' || isNaN(num) || !isFinite(num)) {
+      return '0';
+    }
     return new Intl.NumberFormat('ko-KR').format(Math.round(num));
   };
 
@@ -348,7 +379,10 @@ const JewelryCalculator = () => {
             <div className="p-4 bg-muted rounded-lg">
               <div className="text-sm text-muted-foreground mb-2">현재 적용 금시세 (3.75g 기준)</div>
               <div className="text-xl font-bold text-gold">
-                {formatNumber(inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice)}원
+                {(() => {
+                  const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
+                  return currentGoldPrice > 0 ? formatNumber(currentGoldPrice) + '원' : '금시세를 설정해주세요';
+                })()}
               </div>
             </div>
           </CardContent>
@@ -421,7 +455,7 @@ const JewelryCalculator = () => {
                   기본 원가: {formatNumber(result.baseCost)}원
                 </div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  (금값: {formatNumber(result.baseCost - parseFloat(inputs.laborCost || '0'))}원 + 공임: {formatNumber(parseFloat(inputs.laborCost || '0'))}원)
+                  (금값: {formatNumber(Math.max(0, result.baseCost - parseFloat(inputs.laborCost || '0')))}원 + 공임: {formatNumber(parseFloat(inputs.laborCost || '0'))}원)
                 </div>
               </div>
             </CardContent>
@@ -433,9 +467,21 @@ const JewelryCalculator = () => {
           <Card className="card-gradient border-border">
             <CardContent className="text-center py-8">
               <Calculator className="h-12 w-12 text-gold mx-auto mb-4 animate-pulse" />
-              <p className="text-muted-foreground">
-                중량을 입력하고 금시세를 설정하면 가격이 자동으로 계산됩니다.
-              </p>
+              <div className="space-y-2">
+                <p className="text-muted-foreground">
+                  중량을 입력하고 금시세를 설정하면 가격이 자동으로 계산됩니다.
+                </p>
+                {(!goldPrice.vatPrice && !goldPrice.cashPrice) && (
+                  <p className="text-warning text-sm">
+                    ⚠️ 먼저 설정에서 금시세를 입력해주세요.
+                  </p>
+                )}
+                {(!inputs.weight || parseFloat(inputs.weight) <= 0) && goldPrice.vatPrice > 0 && (
+                  <p className="text-warning text-sm">
+                    ⚠️ 중량을 정확히 입력해주세요.
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
