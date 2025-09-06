@@ -19,7 +19,6 @@ interface MarginSettings {
   k14: number;
   k18: number;
   k24: number;
-  discountRate: number;
 }
 
 interface CalculationInputs {
@@ -55,8 +54,7 @@ const JewelryCalculator = () => {
     return saved ? JSON.parse(saved) : {
       k14: 20,
       k18: 23,
-      k24: 10,
-      discountRate: 10
+      k24: 10
     };
   });
 
@@ -111,8 +109,9 @@ const JewelryCalculator = () => {
       const marginRate = marginSettings[inputs.purity] / 100;
       const regularPrice = baseCost * (1 + marginRate);
 
-      // 할인가 계산
-      const discountPrice = regularPrice * (1 - marginSettings.discountRate / 100);
+      // 할인가 계산 (마진율에서 3% 차감)
+      const discountMarginRate = Math.max(0, marginRate - 0.03); // 3% 할인
+      const discountPrice = baseCost * (1 + discountMarginRate);
 
       // 순이익 계산
       const regularProfit = regularPrice - baseCost;
@@ -254,10 +253,11 @@ const JewelryCalculator = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gold-light">마진 설정 (%)</h3>
+                  <h3 className="text-lg font-semibold text-gold-light">최대 마진 설정 (%)</h3>
+                  <p className="text-sm text-muted-foreground">최대 할인가는 각 마진율에서 3% 차감하여 자동 계산됩니다.</p>
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="margin14k">14K 마진율</Label>
+                      <Label htmlFor="margin14k">14K 최대 마진율</Label>
                       <Input
                         id="margin14k"
                         type="number"
@@ -269,7 +269,7 @@ const JewelryCalculator = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="margin18k">18K 마진율</Label>
+                      <Label htmlFor="margin18k">18K 최대 마진율</Label>
                       <Input
                         id="margin18k"
                         type="number"
@@ -281,7 +281,7 @@ const JewelryCalculator = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="margin24k">24K 마진율</Label>
+                      <Label htmlFor="margin24k">24K 최대 마진율</Label>
                       <Input
                         id="margin24k"
                         type="number"
@@ -289,18 +289,6 @@ const JewelryCalculator = () => {
                         onChange={(e) => setTempMarginSettings({
                           ...tempMarginSettings,
                           k24: parseFloat(e.target.value) || 0
-                        })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="discountRate">최대 할인율</Label>
-                      <Input
-                        id="discountRate"
-                        type="number"
-                        value={tempMarginSettings.discountRate}
-                        onChange={(e) => setTempMarginSettings({
-                          ...tempMarginSettings,
-                          discountRate: parseFloat(e.target.value) || 0
                         })}
                       />
                     </div>
