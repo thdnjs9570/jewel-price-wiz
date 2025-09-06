@@ -72,19 +72,32 @@ const JewelryCalculator = () => {
   // 계산 로직
   const calculatePrice = (): CalculationResult | null => {
     console.log('=== 계산 시작 ===');
-    console.log('입력값:', inputs);
-    console.log('금시세:', goldPrice);
-    console.log('마진 설정:', marginSettings);
+    console.log('입력값:', JSON.stringify(inputs, null, 2));
+    console.log('금시세:', JSON.stringify(goldPrice, null, 2));
+    console.log('마진 설정:', JSON.stringify(marginSettings, null, 2));
 
-    const weight = parseFloat(inputs.weight);
-    const laborCost = parseFloat(inputs.laborCost) || 0;
+    const weight = parseFloat(inputs.weight || '0');
+    const laborCost = parseFloat(inputs.laborCost || '0');
     const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
 
-    console.log('파싱된 값들:', { weight, laborCost, currentGoldPrice });
+    console.log('파싱된 값들:', {
+      weight: weight,
+      laborCost: laborCost, 
+      currentGoldPrice: currentGoldPrice,
+      weightString: inputs.weight,
+      laborString: inputs.laborCost
+    });
 
     // 입력값 유효성 검사
-    if (!inputs.weight || isNaN(weight) || weight <= 0) {
-      console.log('중량 검사 실패:', inputs.weight, weight);
+    if (!inputs.weight || inputs.weight.trim() === '' || isNaN(weight) || weight <= 0) {
+      console.log('중량 검사 실패:', {
+        weightInput: inputs.weight,
+        weightParsed: weight,
+        isEmpty: !inputs.weight,
+        isEmptyTrim: inputs.weight ? inputs.weight.trim() === '' : 'no input',
+        isNaN: isNaN(weight),
+        isLessOrEqual: weight <= 0
+      });
       return null;
     }
     
