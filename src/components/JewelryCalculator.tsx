@@ -497,24 +497,44 @@ const JewelryCalculator = () => {
                 
                 {(() => {
                   // 입력값들 가져오기
-                  const weight = parseFloat(inputs.weight) || 0;
-                  const laborCost = parseFloat(inputs.laborCost) || 0;
+                  const weight = parseFloat(inputs.weight || '0');
+                  const laborCost = parseFloat(inputs.laborCost || '0');
                   const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
                   const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
                   
-                  // 현재 선택된 순도의 마진율 가져오기
-                  const currentMarginPercent = marginSettings[inputs.purity] || 0;
+                  // 현재 선택된 순도의 마진율 가져오기 (14k, 18k, 24k)
+                  const selectedPurity = inputs.purity; // '14k', '18k', '24k'
+                  const marginKey = selectedPurity === '14k' ? 'k14' : selectedPurity === '18k' ? 'k18' : 'k24';
+                  const currentMarginPercent = marginSettings[marginKey] || 0;
+                  
+                  console.log('마진 계산 확인:', {
+                    selectedPurity,
+                    marginKey,
+                    currentMarginPercent,
+                    marginSettings
+                  });
                   
                   // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
                   const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
                   const baseCost = goldValue + laborCost;
                   
-                  // 일반 판매가 = 기본 원가 × (1 + 마진율/100)
-                  const regularPrice = baseCost * (1 + currentMarginPercent / 100);
+                  // 일반 판매가 = 기본 원가 + (기본 원가 × 마진율/100)
+                  const marginAmount = baseCost * (currentMarginPercent / 100);
+                  const regularPrice = baseCost + marginAmount;
                   
-                  // 최대 할인가 = 기본 원가 × (1 + (마진율-3)/100)
+                  // 최대 할인가 = 기본 원가 + (기본 원가 × (마진율-3)/100)
                   const discountMarginPercent = Math.max(0, currentMarginPercent - 3);
-                  const discountPrice = baseCost * (1 + discountMarginPercent / 100);
+                  const discountMarginAmount = baseCost * (discountMarginPercent / 100);
+                  const discountPrice = baseCost + discountMarginAmount;
+                  
+                  console.log('최종 계산 확인:', {
+                    baseCost,
+                    marginAmount,
+                    regularPrice,
+                    discountPrice,
+                    currentMarginPercent,
+                    discountMarginPercent
+                  });
                   
                   // 순이익 계산
                   const regularProfit = regularPrice - baseCost;
