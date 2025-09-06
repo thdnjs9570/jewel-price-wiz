@@ -74,16 +74,16 @@ const PurchaseCalculator = () => {
             <Label className="text-sm font-medium text-foreground">금 순도</Label>
             <div className="flex space-x-2">
               <Button
-                variant={purity === "14K" ? "default" : "secondary"}
+                variant={purity === "14K" ? "gold" : "outline"}
                 onClick={() => setPurity("14K")}
-                className="flex-1"
+                className="flex-1 h-12 text-base font-semibold"
               >
                 14K
               </Button>
               <Button
-                variant={purity === "18K" ? "default" : "secondary"}
+                variant={purity === "18K" ? "gold" : "outline"}
                 onClick={() => setPurity("18K")}
-                className="flex-1"
+                className="flex-1 h-12 text-base font-semibold"
               >
                 18K
               </Button>
