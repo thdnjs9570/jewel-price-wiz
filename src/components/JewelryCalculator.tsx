@@ -37,7 +37,6 @@ interface CalculationResult {
   discountProfit: number;
   regularProfitRate: number;
   discountProfitRate: number;
-  hasVat: boolean;
 }
 
 const JewelryCalculator = () => {
@@ -145,18 +144,9 @@ const JewelryCalculator = () => {
 
       // 할인가 계산 (마진율에서 3% 차감)
       const discountMarginRate = Math.max(0, marginRate - 0.03); // 3% 할인
-      let discountPrice = baseCost * (1 + discountMarginRate);
+      const discountPrice = baseCost * (1 + discountMarginRate);
 
-      // 부가세 포함 케이스일 때만 5% 부가세 추가 적용
-      let finalRegularPrice = regularPrice;
-      let finalDiscountPrice = discountPrice;
-      
-      if (inputs.priceType === 'vat') {
-        finalRegularPrice = regularPrice * 1.05;
-        finalDiscountPrice = discountPrice * 1.05;
-      }
-
-      // 순이익 계산 (부가세 적용 전 가격 기준)
+      // 순이익 계산
       const regularProfit = regularPrice - baseCost;
       const discountProfit = discountPrice - baseCost;
 
@@ -167,13 +157,12 @@ const JewelryCalculator = () => {
       // 최종 결과 검증
       const result = {
         baseCost,
-        regularPrice: finalRegularPrice,
-        discountPrice: finalDiscountPrice,
+        regularPrice,
+        discountPrice,
         regularProfit,
         discountProfit,
         regularProfitRate,
-        discountProfitRate,
-        hasVat: inputs.priceType === 'vat'
+        discountProfitRate
       };
 
       console.log('최종 결과:', result);
@@ -458,11 +447,6 @@ const JewelryCalculator = () => {
                   <div className="space-y-3">
                     <div className="text-3xl font-bold text-foreground">
                       {formatNumber(result.regularPrice)}원
-                      {result.hasVat && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          (부가세 포함)
-                        </div>
-                      )}
                     </div>
                     <Separator />
                     <div className="space-y-2 text-sm">
@@ -487,11 +471,6 @@ const JewelryCalculator = () => {
                   <div className="space-y-3">
                     <div className="text-3xl font-bold text-foreground">
                       {formatNumber(result.discountPrice)}원
-                      {result.hasVat && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          (부가세 포함)
-                        </div>
-                      )}
                     </div>
                     <Separator />
                     <div className="space-y-2 text-sm">
@@ -517,11 +496,6 @@ const JewelryCalculator = () => {
                 <div className="text-sm text-muted-foreground mt-1">
                   (금값: {formatNumber(Math.max(0, result.baseCost - parseFloat(inputs.laborCost || '0')))}원 + 공임: {formatNumber(parseFloat(inputs.laborCost || '0'))}원)
                 </div>
-                {result.hasVat && (
-                  <div className="text-xs text-warning mt-2">
-                    * 부가세 포함 케이스로 최종 판매가에 5% 부가세 추가 적용됨
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -569,23 +543,16 @@ const JewelryCalculator = () => {
                   const discountMarginAmount = baseCost * (discountMarginPercent / 100);
                   const discountPrice = baseCost + discountMarginAmount;
                   
-                  // 부가세 적용 (부가세 포함 케이스일 때만)
-                  const finalRegularPrice = inputs.priceType === 'vat' ? regularPrice * 1.05 : regularPrice;
-                  const finalDiscountPrice = inputs.priceType === 'vat' ? discountPrice * 1.05 : discountPrice;
-                  
                   console.log('최종 계산 확인:', {
                     baseCost,
                     marginAmount,
                     regularPrice,
                     discountPrice,
-                    finalRegularPrice,
-                    finalDiscountPrice,
                     currentMarginPercent,
-                    discountMarginPercent,
-                    hasVat: inputs.priceType === 'vat'
+                    discountMarginPercent
                   });
                   
-                  // 순이익 계산 (부가세 적용 전 기준)
+                  // 순이익 계산
                   const regularProfit = regularPrice - baseCost;
                   const discountProfit = discountPrice - baseCost;
                   
@@ -603,12 +570,7 @@ const JewelryCalculator = () => {
                             <h4 className="text-lg font-semibold text-gold-light">일반 판매가</h4>
                           </div>
                           <div className="text-3xl font-bold text-foreground mb-3">
-                            {formatNumber(finalRegularPrice)}원
-                            {inputs.priceType === 'vat' && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                (부가세 포함)
-                              </div>
-                            )}
+                            {formatNumber(regularPrice)}원
                           </div>
                           <Separator className="mb-3" />
                           <div className="space-y-2 text-sm">
@@ -634,12 +596,7 @@ const JewelryCalculator = () => {
                             <h4 className="text-lg font-semibold text-warning">최대 할인가</h4>
                           </div>
                           <div className="text-3xl font-bold text-foreground mb-3">
-                            {formatNumber(finalDiscountPrice)}원
-                            {inputs.priceType === 'vat' && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                (부가세 포함)
-                              </div>
-                            )}
+                            {formatNumber(discountPrice)}원
                           </div>
                           <Separator className="mb-3" />
                           <div className="space-y-2 text-sm">
@@ -670,11 +627,6 @@ const JewelryCalculator = () => {
                         </div>
                         <div className="text-xs text-muted-foreground mt-2">
                           계산식: {formatNumber(currentGoldPrice)}원 × ({weight}g ÷ 3.75g) × {purityRatios[inputs.purity]} + {formatNumber(laborCost)}원 + {formatNumber(marginSettings.baseCost)}원
-                          {inputs.priceType === 'vat' && (
-                            <div className="text-xs text-warning mt-1">
-                              * 부가세 포함 케이스로 최종 판매가에 5% 부가세 추가 적용
-                            </div>
-                          )}
                         </div>
                       </div>
                     </>
