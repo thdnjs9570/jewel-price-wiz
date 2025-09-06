@@ -138,22 +138,13 @@ const JewelryCalculator = () => {
         return null;
       }
 
-      // 마진율 적용 - purity 키 매핑 수정
-      const marginKey = inputs.purity === '14k' ? 'k14' : 
-                       inputs.purity === '18k' ? 'k18' : 
-                       inputs.purity === '24k' ? 'k24' : 'k14';
-      const marginRate = marginSettings[marginKey] / 100;
-      let regularPrice = baseCost * (1 + marginRate);
+      // 마진율 적용
+      const marginRate = marginSettings[inputs.purity] / 100;
+      const regularPrice = baseCost * (1 + marginRate);
 
       // 할인가 계산 (마진율에서 3% 차감)
       const discountMarginRate = Math.max(0, marginRate - 0.03); // 3% 할인
-      let discountPrice = baseCost * (1 + discountMarginRate);
-
-      // 부가세 포함 케이스일 때 5% VAT 추가
-      if (inputs.priceType === 'vat') {
-        regularPrice = regularPrice * 1.05;
-        discountPrice = discountPrice * 1.05;
-      }
+      const discountPrice = baseCost * (1 + discountMarginRate);
 
       // 순이익 계산
       const regularProfit = regularPrice - baseCost;
