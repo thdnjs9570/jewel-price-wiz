@@ -140,15 +140,27 @@ const JewelryCalculator = () => {
 
       // 마진율 적용
       const marginRate = marginSettings[inputs.purity] / 100;
-      const regularPrice = baseCost * (1 + marginRate);
+      let regularPrice = baseCost * (1 + marginRate);
 
       // 할인가 계산 (마진율에서 3% 차감)
       const discountMarginRate = Math.max(0, marginRate - 0.03); // 3% 할인
-      const discountPrice = baseCost * (1 + discountMarginRate);
+      let discountPrice = baseCost * (1 + discountMarginRate);
 
-      // 순이익 계산
-      const regularProfit = regularPrice - baseCost;
-      const discountProfit = discountPrice - baseCost;
+      // ✅ 부가세 포함 금시세일 때 최종 판매가에 부가세 5% 추가 적용
+      const isVatPrice = inputs.priceType === 'vat';
+      if (isVatPrice) {
+        regularPrice = regularPrice * 1.05;
+        discountPrice = discountPrice * 1.05;
+      }
+
+      // 순이익 계산 (부가세 포함 시 부가세 차감)
+      let regularProfit = regularPrice - baseCost;
+      let discountProfit = discountPrice - baseCost;
+      
+      if (isVatPrice) {
+        regularProfit = regularProfit - (regularPrice * 0.05);
+        discountProfit = discountProfit - (discountPrice * 0.05);
+      }
 
       // 순이익률 계산 (0으로 나누기 방지)
       const regularProfitRate = regularPrice > 0 ? Math.round((regularProfit / regularPrice) * 100) : 0;
@@ -450,6 +462,12 @@ const JewelryCalculator = () => {
                     </div>
                     <Separator />
                     <div className="space-y-2 text-sm">
+                      {inputs.priceType === 'vat' && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">카드 수수료 (5%)</span>
+                          <span className="font-semibold text-gold">포함</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">순이익</span>
                         <span className="font-semibold text-success">+{formatNumber(result.regularProfit)}원</span>
@@ -474,6 +492,12 @@ const JewelryCalculator = () => {
                     </div>
                     <Separator />
                     <div className="space-y-2 text-sm">
+                      {inputs.priceType === 'vat' && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">카드 수수료 (5%)</span>
+                          <span className="font-semibold text-warning">포함</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">순이익</span>
                         <span className="font-semibold text-warning">+{formatNumber(result.discountProfit)}원</span>
@@ -495,6 +519,7 @@ const JewelryCalculator = () => {
                 </div>
                 <div className="text-sm text-muted-foreground mt-1">
                   (금값: {formatNumber(Math.max(0, result.baseCost - parseFloat(inputs.laborCost || '0')))}원 + 공임: {formatNumber(parseFloat(inputs.laborCost || '0'))}원)
+                  {inputs.priceType === 'vat' && <span className="text-warning"> + 부가세 5%</span>}
                 </div>
               </div>
             </CardContent>
@@ -523,38 +548,34 @@ const JewelryCalculator = () => {
                   const marginKey = selectedPurity === '14k' ? 'k14' : selectedPurity === '18k' ? 'k18' : 'k24';
                   const currentMarginPercent = marginSettings[marginKey] || 0;
                   
-                  console.log('마진 계산 확인:', {
-                    selectedPurity,
-                    marginKey,
-                    currentMarginPercent,
-                    marginSettings
-                  });
-                  
                   // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임 + 기본 마진
                   const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
                   const baseCost = goldValue + laborCost + marginSettings.baseCost;
                   
                   // 일반 판매가 = 기본 원가 + (기본 원가 × 마진율/100)
                   const marginAmount = baseCost * (currentMarginPercent / 100);
-                  const regularPrice = baseCost + marginAmount;
+                  let regularPrice = baseCost + marginAmount;
                   
                   // 최대 할인가 = 기본 원가 + (기본 원가 × (마진율-3)/100)
                   const discountMarginPercent = Math.max(0, currentMarginPercent - 3);
                   const discountMarginAmount = baseCost * (discountMarginPercent / 100);
-                  const discountPrice = baseCost + discountMarginAmount;
+                  let discountPrice = baseCost + discountMarginAmount;
                   
-                  console.log('최종 계산 확인:', {
-                    baseCost,
-                    marginAmount,
-                    regularPrice,
-                    discountPrice,
-                    currentMarginPercent,
-                    discountMarginPercent
-                  });
+                  // ✅ 부가세 포함 금시세일 때 최종 판매가에 부가세 5% 추가 적용
+                  const isVatPrice = inputs.priceType === 'vat';
+                  if (isVatPrice) {
+                    regularPrice = regularPrice * 1.05;
+                    discountPrice = discountPrice * 1.05;
+                  }
                   
-                  // 순이익 계산
-                  const regularProfit = regularPrice - baseCost;
-                  const discountProfit = discountPrice - baseCost;
+                  // 순이익 계산 (부가세 포함 시 부가세 차감)
+                  let regularProfit = regularPrice - baseCost;
+                  let discountProfit = discountPrice - baseCost;
+                  
+                  if (isVatPrice) {
+                    regularProfit = regularProfit - (regularPrice * 0.05);
+                    discountProfit = discountProfit - (discountPrice * 0.05);
+                  }
                   
                   // 수익률 계산
                   const regularProfitRate = regularPrice > 0 ? Math.round((regularProfit / regularPrice) * 100) : 0;
@@ -578,6 +599,12 @@ const JewelryCalculator = () => {
                               <span className="text-muted-foreground">적용 마진율</span>
                               <span className="font-semibold text-gold">{currentMarginPercent}%</span>
                             </div>
+                            {isVatPrice && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">카드 수수료 (5%)</span>
+                                <span className="font-semibold text-gold">포함</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">순이익</span>
                               <span className="font-semibold text-success">+{formatNumber(regularProfit)}원</span>
@@ -604,6 +631,12 @@ const JewelryCalculator = () => {
                               <span className="text-muted-foreground">적용 마진율</span>
                               <span className="font-semibold text-warning">{discountMarginPercent}%</span>
                             </div>
+                            {isVatPrice && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">카드 수수료 (5%)</span>
+                                <span className="font-semibold text-warning">포함</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">순이익</span>
                               <span className="font-semibold text-warning">+{formatNumber(discountProfit)}원</span>
@@ -627,6 +660,7 @@ const JewelryCalculator = () => {
                         </div>
                         <div className="text-xs text-muted-foreground mt-2">
                           계산식: {formatNumber(currentGoldPrice)}원 × ({weight}g ÷ 3.75g) × {purityRatios[inputs.purity]} + {formatNumber(laborCost)}원 + {formatNumber(marginSettings.baseCost)}원
+                          {isVatPrice && <span className="text-warning"> + 부가세 5%</span>}
                         </div>
                       </div>
                     </>
