@@ -53,8 +53,8 @@ const JewelryCalculator = () => {
   const [marginSettings, setMarginSettings] = useState<MarginSettings>(() => {
     const saved = localStorage.getItem('marginSettings');
     return saved ? JSON.parse(saved) : {
-      k14: 20,
-      k18: 23,
+      k14: 25,
+      k18: 28,
       k24: 10,
       baseCost: 9000
     };
