@@ -475,7 +475,7 @@ const JewelryCalculator = () => {
         {/* 실시간 계산 결과 또는 안내 메시지 */}
         <Card className="card-gradient border-border">
           <CardContent className="text-center py-8">
-            {inputs.weight && parseFloat(inputs.weight) > 0 && (goldPrice.vatPrice > 0 || goldPrice.cashPrice > 0) ? (
+            {inputs.weight && parseFloat(inputs.weight) > 0 && ((goldPrice.vatPrice > 0) || (goldPrice.cashPrice > 0)) ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-center gap-2 mb-6">
                   <TrendingUp className="h-6 w-6 text-gold" />
@@ -483,47 +483,25 @@ const JewelryCalculator = () => {
                 </div>
                 
                 {(() => {
-                  // 기본 계산값들
+                  // 입력값들 가져오기
                   const weight = parseFloat(inputs.weight) || 0;
                   const laborCost = parseFloat(inputs.laborCost) || 0;
                   const currentGoldPrice = inputs.priceType === 'vat' ? goldPrice.vatPrice : goldPrice.cashPrice;
                   const purityRatios = { '14k': 0.6435, '18k': 0.825, '24k': 1 };
                   
-                  console.log('실시간 계산 값들:', {
-                    weight,
-                    laborCost,
-                    currentGoldPrice,
-                    purity: inputs.purity,
-                    marginSettings
-                  });
+                  // 현재 선택된 순도의 마진율 가져오기
+                  const currentMarginPercent = marginSettings[inputs.purity] || 0;
                   
                   // 기본 원가 계산: (금시세 × (중량/3.75) × 순도비율) + 공임
                   const goldValue = currentGoldPrice * (weight / 3.75) * purityRatios[inputs.purity];
                   const baseCost = goldValue + laborCost;
                   
-                  console.log('중간 계산값들:', {
-                    goldValue,
-                    baseCost,
-                    purityRatio: purityRatios[inputs.purity]
-                  });
+                  // 일반 판매가 = 기본 원가 × (1 + 마진율/100)
+                  const regularPrice = baseCost * (1 + currentMarginPercent / 100);
                   
-                  // 마진율 (퍼센트를 소수로 변환)
-                  const marginPercent = marginSettings[inputs.purity]; // 20, 23, 10 등
-                  const marginRate = marginPercent / 100; // 0.20, 0.23, 0.10 등
-                  
-                  // 일반 판매가 = 기본 원가 × (1 + 마진율)
-                  const regularPrice = baseCost * (1 + marginRate);
-                  
-                  // 최대 할인가 = 기본 원가 × (1 + (마진율 - 3%))
-                  const discountMarginRate = Math.max(0, (marginPercent - 3) / 100); // 3% 할인
-                  const discountPrice = baseCost * (1 + discountMarginRate);
-                  
-                  console.log('최종 계산값들:', {
-                    marginPercent,
-                    marginRate,
-                    regularPrice,
-                    discountPrice
-                  });
+                  // 최대 할인가 = 기본 원가 × (1 + (마진율-3)/100)
+                  const discountMarginPercent = Math.max(0, currentMarginPercent - 3);
+                  const discountPrice = baseCost * (1 + discountMarginPercent / 100);
                   
                   // 순이익 계산
                   const regularProfit = regularPrice - baseCost;
@@ -549,7 +527,7 @@ const JewelryCalculator = () => {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">적용 마진율</span>
-                              <span className="font-semibold text-gold">{marginPercent}%</span>
+                              <span className="font-semibold text-gold">{currentMarginPercent}%</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">순이익</span>
@@ -575,7 +553,7 @@ const JewelryCalculator = () => {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">적용 마진율</span>
-                              <span className="font-semibold text-warning">{Math.max(0, marginPercent - 3)}%</span>
+                              <span className="font-semibold text-warning">{discountMarginPercent}%</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">순이익</span>
